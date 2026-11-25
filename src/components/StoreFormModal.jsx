@@ -23,6 +23,7 @@ export default function StoreFormModal({ isOpen, onClose, editingStore, onSave, 
     recommendedSku: '海味珠貝凍乾・東港櫻花蝦肉條',
     highlight: '',
     note: '',
+    photoUrl: '',
     lat: '',
     lng: '',
   });
@@ -41,6 +42,7 @@ export default function StoreFormModal({ isOpen, onClose, editingStore, onSave, 
         recommendedSku: editingStore.recommendedSku || '',
         highlight: editingStore.highlight || '',
         note: editingStore.note || '',
+        photoUrl: editingStore.photoUrl || '',
         lat: editingStore.lat ?? '',
         lng: editingStore.lng ?? '',
       });
@@ -57,6 +59,7 @@ export default function StoreFormModal({ isOpen, onClose, editingStore, onSave, 
         recommendedSku: '海味珠貝凍乾・猴頭菇養生脆片',
         highlight: '手動新增之潛力合作門市，可隨時開啟 Google Maps 實景導航與追蹤洽談進度。',
         note: '',
+        photoUrl: '',
         lat: '',
         lng: '',
       });
@@ -167,6 +170,16 @@ export default function StoreFormModal({ isOpen, onClose, editingStore, onSave, 
                 placeholder="例如：高雄市左營區博愛二路..."
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
+              />
+            </div>
+
+            <div className="mt-field full">
+              <label>店面實拍照片網址（選填，貼上圖片連結即可直接作為卡片封面）</label>
+              <input
+                type="url"
+                placeholder="https://..."
+                value={form.photoUrl}
+                onChange={(e) => setForm({ ...form, photoUrl: e.target.value })}
               />
             </div>
 

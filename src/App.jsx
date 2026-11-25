@@ -13,6 +13,7 @@ import {
   Plus,
   Map as MapIcon,
   List,
+  Camera,
 } from 'lucide-react';
 import {
   INITIAL_PARTNER_STORES,
@@ -25,12 +26,14 @@ import InteractiveMap from './components/InteractiveMap';
 import StoreDetailDrawer from './components/StoreDetailDrawer';
 import FiltersModal from './components/FiltersModal';
 import StoreFormModal from './components/StoreFormModal';
+import StreetViewKeyModal from './components/StreetViewKeyModal';
 import HomeOverview from './components/HomeOverview';
 import ProfitCalculator from './components/ProfitCalculator';
 import PipelineBoard from './components/PipelineBoard';
 
 const STORAGE_KEY_STORES = 'pawmap_partner_stores_v1';
 const STORAGE_KEY_STARRED = 'pawmap_starred_ids_v1';
+const STORAGE_KEY_GMAPS = 'pawmap_google_maps_api_key_v1';
 
 function MindtripSparkle({ size = 22 }) {
   return (
@@ -111,9 +114,27 @@ export default function App() {
   const [mobileShowMap, setMobileShowMap] = useState(() => urlParams.get('mobileMap') === '1');
   const initialDrawerTab = urlParams.get('tab') || 'overview';
 
-  // Add / Edit Store Modal
+  // Add / Edit Store Modal & Street View API Key Modal
   const [storeModalOpen, setStoreModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState(null);
+  const [streetViewModalOpen, setStreetViewModalOpen] = useState(false);
+  const [googleApiKey, setGoogleApiKey] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_GMAPS) || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const handleSaveGoogleKey = (key) => {
+    setGoogleApiKey(key);
+    try {
+      if (key) localStorage.setItem(STORAGE_KEY_GMAPS, key);
+      else localStorage.removeItem(STORAGE_KEY_GMAPS);
+    } catch {
+      // ignore
+    }
+  };
 
   const matchesRegion = (store, regionId) => {
     if (regionId === 'all') return true;
@@ -444,6 +465,23 @@ export default function App() {
                     <button
                       type="button"
                       className="mt-add-pill-btn"
+                      style={{
+                        height: 30,
+                        padding: '0 10px',
+                        fontSize: 12,
+                        background: googleApiKey ? '#DCFCE7' : undefined,
+                        borderColor: googleApiKey ? '#4ADE80' : undefined,
+                        color: googleApiKey ? '#166534' : undefined,
+                      }}
+                      title="設定自動抓取 Google 真實門牌街景照片"
+                      onClick={() => setStreetViewModalOpen(true)}
+                    >
+                      <Camera size={13} />
+                      {googleApiKey ? '已開街景' : '門牌照'}
+                    </button>
+                    <button
+                      type="button"
+                      className="mt-add-pill-btn"
                       style={{ height: 30, padding: '0 11px', fontSize: 12 }}
                       onClick={() => {
                         setEditingStore(null);
@@ -601,6 +639,7 @@ export default function App() {
                             isStarred={starredIds.includes(store.id)}
                             onToggleStar={handleToggleStar}
                             onCycleStatus={handleCycleStatus}
+                            googleApiKey={googleApiKey}
                           />
 
                           <div className="mt-card-title-row">
@@ -636,6 +675,7 @@ export default function App() {
                 onToggleStar={handleToggleStar}
                 onClose={() => setSelectedStoreId(null)}
                 onUpdateStore={handleUpdateStore}
+                googleApiKey={googleApiKey}
                 initialTab={initialDrawerTab}
                 onEditModal={(st) => {
                   setEditingStore(st);
@@ -668,6 +708,7 @@ export default function App() {
             onJumpToExplore={handleJumpToExplore}
             onOpenStoreInMap={handleOpenStoreInMap}
             onNavigateTab={setActiveNav}
+            googleApiKey={googleApiKey}
           />
         )}
 
@@ -726,6 +767,14 @@ export default function App() {
         editingStore={editingStore}
         onSave={handleSaveStore}
         onDelete={handleDeleteStore}
+      />
+
+      {/* Google Street View API Key Modal */}
+      <StreetViewKeyModal
+        isOpen={streetViewModalOpen}
+        onClose={() => setStreetViewModalOpen(false)}
+        googleApiKey={googleApiKey}
+        onSaveKey={handleSaveGoogleKey}
       />
     </div>
   );

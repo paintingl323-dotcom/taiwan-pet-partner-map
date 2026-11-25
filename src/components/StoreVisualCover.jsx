@@ -1,84 +1,30 @@
-import React from 'react';
-import { Heart, Check } from 'lucide-react';
-import { OUTREACH_STATUSES } from '../data/partnersData';
+import React, { useState } from 'react';
+import { Heart, Check, ExternalLink, MapPin } from 'lucide-react';
+import { OUTREACH_STATUSES, STORE_CATEGORIES } from '../data/partnersData';
 
-const PALETTES = {
-  寵物咖啡廳: [
-    { bg: 'linear-gradient(145deg, #D99B66 0%, #9E5834 100%)', accent: '#FFF3E4', tag: '擼貓互動・隨手包' },
-    { bg: 'linear-gradient(145deg, #C78259 0%, #7C4026 100%)', accent: '#FCEAD9', tag: '店貓試吃・高回購' },
-    { bg: 'linear-gradient(145deg, #B58B63 0%, #6B4D35 100%)', accent: '#F7EFE4', tag: '選物木架・寄賣點' },
-  ],
-  寵物美容: [
-    { bg: 'linear-gradient(145deg, #4F8A8B 0%, #265057 100%)', accent: '#E4F6F6', tag: '洗完澡獎勵小包' },
-    { bg: 'linear-gradient(145deg, #5C8D76 0%, #2D5542 100%)', accent: '#E6F5EC', tag: '結帳櫃檯黃金位' },
-    { bg: 'linear-gradient(145deg, #5A7D9A 0%, #2C465E 100%)', accent: '#E8F1F8', tag: '雙週熟客高黏著' },
-  ],
-  寵物旅館: [
-    { bg: 'linear-gradient(145deg, #7C6A96 0%, #42345B 100%)', accent: '#F1ECF8', tag: '退房安心伴手禮' },
-    { bg: 'linear-gradient(145deg, #8F6B58 0%, #4E3629 100%)', accent: '#F8EEE8', tag: '精品住宿迎賓禮' },
-  ],
-  友善餐廳: [
-    { bg: 'linear-gradient(145deg, #B86B52 0%, #753928 100%)', accent: '#FBECE6', tag: '毛孩同行加購盤' },
-    { bg: 'linear-gradient(145deg, #6E8255 0%, #3C4B2B 100%)', accent: '#EEF3E6', tag: '草皮聚會伴手禮' },
-  ],
-};
+function latLngToTileInfo(lat, lng, zoom = 16) {
+  const n = 2 ** zoom;
+  const xf = ((lng + 180) / 360) * n;
+  const latRad = (lat * Math.PI) / 180;
+  const yf =
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
 
-function hashCode(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i += 1) {
-    h = (h * 31 + str.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
+  const xTile = Math.floor(xf);
+  const yTile = Math.floor(yf);
+  // Clamp marker position safely within visible card area
+  const pinLeftPct = Math.max(24, Math.min(76, Math.round((xf - xTile) * 100)));
+  const pinTopPct = Math.max(26, Math.min(68, Math.round((yf - yTile) * 100)));
+
+  return {
+    tileUrl: `https://tile.openstreetmap.org/${zoom}/${xTile}/${yTile}.png`,
+    pinLeftPct,
+    pinTopPct,
+  };
 }
 
-function CategoryIllustration({ category, accent }) {
-  if (category === '寵物咖啡廳') {
-    return (
-      <svg width="78" height="78" viewBox="0 0 80 80" fill="none" aria-hidden="true">
-        <circle cx="40" cy="40" r="34" fill={accent} fillOpacity="0.16" />
-        <path
-          d="M24 50C24 38 29 31 40 31C51 31 56 38 56 50C56 55 51 58 40 58C29 58 24 55 24 50Z"
-          fill={accent}
-          fillOpacity="0.92"
-        />
-        <path d="M26 36L23 22L35 31Z" fill={accent} fillOpacity="0.92" />
-        <path d="M54 36L57 22L45 31Z" fill={accent} fillOpacity="0.92" />
-        <circle cx="34" cy="44" r="2.4" fill="#2A1F1A" />
-        <circle cx="46" cy="44" r="2.4" fill="#2A1F1A" />
-        <path d="M38 48.5L40 50.5L42 48.5" stroke="#2A1F1A" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  if (category === '寵物美容') {
-    return (
-      <svg width="78" height="78" viewBox="0 0 80 80" fill="none" aria-hidden="true">
-        <circle cx="40" cy="40" r="34" fill={accent} fillOpacity="0.16" />
-        <circle cx="30" cy="30" r="9" fill={accent} fillOpacity="0.88" />
-        <circle cx="50" cy="28" r="7" fill={accent} fillOpacity="0.72" />
-        <circle cx="43" cy="46" r="13" fill={accent} fillOpacity="0.94" />
-        <circle cx="28" cy="49" r="8" fill={accent} fillOpacity="0.8" />
-        <path d="M53 47L56 41L59 47L65 50L59 53L56 59L53 53L47 50Z" fill="#FFFFFF" />
-      </svg>
-    );
-  }
-  if (category === '寵物旅館') {
-    return (
-      <svg width="78" height="78" viewBox="0 0 80 80" fill="none" aria-hidden="true">
-        <circle cx="40" cy="40" r="34" fill={accent} fillOpacity="0.16" />
-        <path d="M22 40L40 24L58 40V57H22V40Z" fill={accent} fillOpacity="0.92" />
-        <rect x="35" y="44" width="10" height="13" rx="5" fill="#3B2E4A" fillOpacity="0.75" />
-        <circle cx="40" cy="36" r="3.5" fill="#3B2E4A" fillOpacity="0.75" />
-      </svg>
-    );
-  }
-  return (
-    <svg width="78" height="78" viewBox="0 0 80 80" fill="none" aria-hidden="true">
-      <circle cx="40" cy="40" r="34" fill={accent} fillOpacity="0.16" />
-      <rect x="24" y="33" width="28" height="21" rx="8" fill={accent} fillOpacity="0.92" />
-      <path d="M52 37H56C58.8 37 61 39.2 61 42C61 44.8 58.8 47 56 47H52" stroke={accent} strokeWidth="3.5" />
-      <path d="M21 57H57" stroke={accent} strokeWidth="3.5" strokeLinecap="round" />
-    </svg>
-  );
+function shortAddress(address, region) {
+  if (!address) return '';
+  return address.replace(new RegExp(`^${region}(市|縣)?`), '');
 }
 
 export default function StoreVisualCover({
@@ -86,33 +32,132 @@ export default function StoreVisualCover({
   isStarred,
   onToggleStar,
   onCycleStatus,
+  googleApiKey = '',
   height,
   hideActions = false,
 }) {
-  const list = PALETTES[store.category] || PALETTES['寵物咖啡廳'];
-  const palette = list[hashCode(store.id + store.name) % list.length];
-  const statusObj = OUTREACH_STATUSES.find((s) => s.id === store.status) || OUTREACH_STATUSES[0];
+  const [imgError, setImgError] = useState(false);
+
+  const statusObj =
+    OUTREACH_STATUSES.find((s) => s.id === store.status) || OUTREACH_STATUSES[0];
+  const catObj =
+    STORE_CATEGORIES.find((c) => c.id === store.category) || STORE_CATEGORIES[1];
+
+  const streetViewPhotoUrl =
+    googleApiKey && !imgError
+      ? `https://maps.googleapis.com/maps/api/streetview?size=640x480&location=${encodeURIComponent(
+          `${store.address}`
+        )}&fov=80&pitch=5&source=outdoor&key=${encodeURIComponent(googleApiKey)}`
+      : null;
+
+  const directPhotoUrl = !imgError && store.photoUrl ? store.photoUrl : streetViewPhotoUrl;
+
+  const tileInfo = latLngToTileInfo(
+    typeof store.lat === 'number' ? store.lat : 22.642,
+    typeof store.lng === 'number' ? store.lng : 120.312,
+    16
+  );
+
+  const pano360Url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${store.lat},${store.lng}`;
 
   return (
     <div
       className="mt-cover-box"
       style={{
-        background: palette.bg,
+        background: '#E9E4DA',
         ...(height ? { height, aspectRatio: 'auto', marginBottom: 0, borderRadius: 0 } : {}),
       }}
     >
-      {/* Top-Left Status Badge */}
+      {/* LAYER 1: Real Storefront Photo (when custom photoUrl or Google Street View API Key is active) OR Real Address Street-Block Tile */}
+      {directPhotoUrl ? (
+        <img
+          src={directPhotoUrl}
+          alt={`${store.name} 門牌實景`}
+          loading="lazy"
+          onError={() => setImgError(true)}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+      ) : (
+        <>
+          <img
+            src={tileInfo.tileUrl}
+            alt={`${store.address} 真實街廓位置`}
+            loading="lazy"
+            style={{
+              position: 'absolute',
+              inset: '-10%',
+              width: '120%',
+              height: '120%',
+              objectFit: 'cover',
+              filter: 'saturate(0.92) contrast(1.03) brightness(0.99)',
+            }}
+          />
+          {/* Subtle top/bottom vignette so badges & address bar read with high contrast */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(180deg, rgba(20,19,18,0.18) 0%, rgba(20,19,18,0.02) 45%, rgba(20,19,18,0.68) 100%)',
+            }}
+          />
+
+          {/* Exact Store Pin on the Real Street Map */}
+          <div
+            style={{
+              position: 'absolute',
+              left: `${tileInfo.pinLeftPct}%`,
+              top: `${tileInfo.pinTopPct}%`,
+              transform: 'translate(-50%, -50%)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 9px',
+              borderRadius: 999,
+              background: '#141312',
+              color: '#FAF8F5',
+              fontSize: 11.5,
+              fontWeight: 700,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.28), 0 0 0 2px #FCFBF9',
+              zIndex: 2,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <span>{catObj.icon}</span>
+            <span
+              style={{
+                width: 6.5,
+                height: 6.5,
+                borderRadius: 999,
+                background: statusObj.color,
+              }}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Top-Left Color-Coded Status Badge */}
       {!hideActions && (
         <div
           className="mt-cover-status-pill"
-          style={{ background: statusObj.bg, color: statusObj.text }}
+          style={{
+            background: statusObj.bg,
+            color: statusObj.text,
+            border: `1px solid ${statusObj.border || statusObj.color}`,
+          }}
         >
           <span className="mt-dot" style={{ background: statusObj.color }} />
           {statusObj.label}
         </div>
       )}
 
-      {/* Top-Right Mindtrip Translucent Action Circles (Save ♡ & Quick Status Advance ✓) */}
+      {/* Top-Right Mindtrip Translucent Action Circles */}
       {!hideActions && (
         <div className="mt-cover-actions">
           <button
@@ -140,45 +185,66 @@ export default function StoreVisualCover({
         </div>
       )}
 
-      {/* Center Editorial Vector Emblem + Store District Tag */}
+      {/* Bottom Real Address Bar + 1-Click Free 360° Real Storefront Street View Link */}
       <div
         style={{
           position: 'absolute',
-          inset: 0,
+          left: 8,
+          right: 8,
+          bottom: 8,
+          zIndex: 4,
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          padding: '18px 12px 24px',
-          textAlign: 'center',
+          justifyContent: 'space-between',
+          gap: 6,
         }}
       >
-        <CategoryIllustration category={store.category} accent={palette.accent} />
-        <div
+        <span
           style={{
-            marginTop: 4,
-            padding: '3px 10px',
-            borderRadius: 999,
-            background: 'rgba(20, 19, 18, 0.24)',
-            color: '#FFFDF9',
             fontSize: 11,
             fontWeight: 600,
-            letterSpacing: '0.02em',
-            maxWidth: '90%',
+            color: '#FAF8F5',
+            background: 'rgba(20, 19, 18, 0.66)',
+            backdropFilter: 'blur(6px)',
+            padding: '3px 8px',
+            borderRadius: 999,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
+            minWidth: 0,
           }}
+          title={store.address}
         >
-          {store.ratingTag || palette.tag}
-        </div>
-      </div>
+          <MapPin size={10} style={{ display: 'inline', verticalAlign: '-1px', marginRight: 3 }} />
+          {shortAddress(store.address, store.region)}
+        </span>
 
-      {/* Mindtrip Bottom Dots */}
-      <div className="mt-cover-dots">
-        <span />
-        <span />
-        <span />
+        {!hideActions && (
+          <a
+            href={pano360Url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            title="免費開啟 Google 360° 真實店門口街景照片"
+            style={{
+              flexShrink: 0,
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#141312',
+              background: 'rgba(252, 251, 249, 0.94)',
+              padding: '3px 8px',
+              borderRadius: 999,
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 3,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+            }}
+          >
+            街景
+            <ExternalLink size={10} />
+          </a>
+        )}
       </div>
     </div>
   );

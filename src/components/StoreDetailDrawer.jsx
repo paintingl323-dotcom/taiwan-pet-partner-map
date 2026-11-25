@@ -10,10 +10,12 @@ export default function StoreDetailDrawer({
   onClose,
   onUpdateStore,
   onEditModal,
+  googleApiKey = '',
   initialTab = 'overview',
 }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [copied, setCopied] = useState(false);
+  const [embedMapType, setEmbedMapType] = useState('m'); // 'm' street | 'h' satellite hybrid
 
   if (!store) return null;
 
@@ -21,9 +23,10 @@ export default function StoreDetailDrawer({
   const gmapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${store.name} ${store.address}`
   )}`;
+  const gmapsPanoUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${store.lat},${store.lng}`;
   const gmapsEmbedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(
     `${store.name} ${store.address}`
-  )}&hl=zh-TW&z=16&output=embed`;
+  )}&hl=zh-TW&t=${embedMapType}&z=${embedMapType === 'h' ? 19 : 17}&output=embed`;
 
   const handleCopyAddress = () => {
     navigator.clipboard?.writeText(`${store.name}｜${store.address}`);
@@ -46,6 +49,7 @@ export default function StoreDetailDrawer({
           isStarred={isStarred}
           onToggleStar={onToggleStar}
           onCycleStatus={() => {}}
+          googleApiKey={googleApiKey}
           height="215px"
           hideActions
         />
@@ -60,15 +64,24 @@ export default function StoreDetailDrawer({
               onClick={() => onEditModal(store)}
             >
               <Edit3 size={13} />
-              編輯店家
+              編輯
             </button>
+            <a
+              href={gmapsPanoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-hero-pill"
+            >
+              360° 店門街景
+              <ExternalLink size={13} />
+            </a>
             <a
               href={gmapsSearchUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-hero-pill"
             >
-              Google Maps 導航
+              店家照片＆導航
               <ExternalLink size={13} />
             </a>
           </div>
@@ -249,12 +262,30 @@ export default function StoreDetailDrawer({
         {/* TAB 2: LIVE GOOGLE MAPS EMBED */}
         {activeTab === 'gmaps' && (
           <div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+              <button
+                type="button"
+                className={`mt-outline-chip ${embedMapType === 'm' ? 'is-selected' : ''}`}
+                style={{ height: 32, fontSize: 12.5 }}
+                onClick={() => setEmbedMapType('m')}
+              >
+                🗺️ 街道定位圖
+              </button>
+              <button
+                type="button"
+                className={`mt-outline-chip ${embedMapType === 'h' ? 'is-selected' : ''}`}
+                style={{ height: 32, fontSize: 12.5 }}
+                onClick={() => setEmbedMapType('h')}
+              >
+                🛰️ 衛星街廓空拍
+              </button>
+            </div>
             <div
               style={{
                 borderRadius: 18,
                 overflow: 'hidden',
                 border: '1px solid rgba(20,19,18,0.1)',
-                height: 310,
+                height: 300,
                 marginBottom: 14,
                 background: '#EFECE6',
               }}
@@ -266,19 +297,28 @@ export default function StoreDetailDrawer({
                 referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
-            <p style={{ fontSize: 12.5, color: '#57534E', margin: '0 0 14px', lineHeight: 1.5 }}>
-              上方為即時串接之 Google Maps 門市定位預覽；如需查看店家電話、IG/FB 連結與飼主真實照片評論，請點擊下方按鈕直接開啟 Google 地圖。
-            </p>
-            <a
-              href={gmapsSearchUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-black-cta"
-              style={{ width: '100%' }}
-            >
-              一鍵開啟 Google Maps 導航與店家資訊
-              <ExternalLink size={15} />
-            </a>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <a
+                href={gmapsPanoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-black-cta"
+                style={{ width: '100%' }}
+              >
+                🚶 開啟 Google 360° 真實店門口街景照
+                <ExternalLink size={15} />
+              </a>
+              <a
+                href={gmapsSearchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-add-pill-btn"
+                style={{ width: '100%', height: 40, justifyContent: 'center', textDecoration: 'none' }}
+              >
+                查看店家上傳實拍照・電話・營業時間
+                <ExternalLink size={14} />
+              </a>
+            </div>
           </div>
         )}
 

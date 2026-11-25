@@ -42,6 +42,7 @@ export default function HomeOverview({
   onJumpToExplore,
   onOpenStoreInMap,
   onNavigateTab,
+  googleApiKey = '',
 }) {
   const [previewRegion, setPreviewRegion] = useState('高雄');
 
@@ -318,6 +319,7 @@ export default function HomeOverview({
                   isStarred={starredIds.includes(store.id)}
                   onToggleStar={onToggleStar}
                   onCycleStatus={onCycleStatus}
+                  googleApiKey={googleApiKey}
                 />
                 <h4 className="mt-card-title">{store.name}</h4>
                 <div className="mt-card-meta-line">
