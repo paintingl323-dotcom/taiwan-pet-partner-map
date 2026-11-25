@@ -205,17 +205,31 @@ export default function StoreDetailDrawer({
                 點擊更新目前洽談進度：
               </div>
               <div className="mt-status-stepper">
-                {OUTREACH_STATUSES.map((st) => (
-                  <button
-                    key={st.id}
-                    type="button"
-                    className={`mt-status-step-btn ${store.status === st.id ? 'is-selected' : ''}`}
-                    onClick={() => onUpdateStore(store.id, { status: st.id })}
-                  >
-                    <span className="mt-dot" style={{ background: st.color }} />
-                    {st.label}
-                  </button>
-                ))}
+                {OUTREACH_STATUSES.map((st) => {
+                  const isSel = store.status === st.id;
+                  return (
+                    <button
+                      key={st.id}
+                      type="button"
+                      className="mt-status-step-btn"
+                      style={
+                        isSel
+                          ? {
+                              background: st.bg,
+                              borderColor: st.border || st.color,
+                              borderWidth: '1.5px',
+                              color: st.text,
+                              fontWeight: 800,
+                            }
+                          : undefined
+                      }
+                      onClick={() => onUpdateStore(store.id, { status: st.id })}
+                    >
+                      <span className="mt-dot" style={{ background: st.color }} />
+                      {st.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

@@ -536,6 +536,15 @@ export default function App() {
                         className={`mt-status-chip-mini ${
                           selectedStatus === st.id ? 'is-active' : ''
                         }`}
+                        style={
+                          selectedStatus === st.id
+                            ? {
+                                background: st.bg,
+                                borderColor: st.border || st.color,
+                                color: st.text,
+                              }
+                            : undefined
+                        }
                         onClick={() =>
                           setSelectedStatus(selectedStatus === st.id ? 'all' : st.id)
                         }

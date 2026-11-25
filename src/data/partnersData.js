@@ -39,10 +39,38 @@ export const STORE_CATEGORIES = [
 ];
 
 export const OUTREACH_STATUSES = [
-  { id: '待聯絡', label: '待聯絡', color: '#78716C', bg: '#EFECE6', text: '#44403C' },
-  { id: '已寄試吃包', label: '已寄試吃包', color: '#D97706', bg: '#F9EBD2', text: '#92400E' },
-  { id: '洽談中', label: '洽談中', color: '#DC5632', bg: '#FADFD6', text: '#9A3412' },
-  { id: '已上架合作', label: '已上架合作', color: '#1F8A5B', bg: '#DCF0E3', text: '#166534' },
+  {
+    id: '待聯絡',
+    label: '待聯絡',
+    color: '#78716C',
+    bg: '#EFECE6',
+    border: '#D6D1C7',
+    text: '#44403C',
+  },
+  {
+    id: '已寄試吃包',
+    label: '已寄試吃包',
+    color: '#D97706',
+    bg: '#FEF0C7',
+    border: '#F59E0B',
+    text: '#92400E',
+  },
+  {
+    id: '洽談中',
+    label: '洽談中',
+    color: '#2563EB',
+    bg: '#DBEAFE',
+    border: '#60A5FA',
+    text: '#1E40AF',
+  },
+  {
+    id: '已上架合作',
+    label: '已上架合作',
+    color: '#16A34A',
+    bg: '#DCFCE7',
+    border: '#4ADE80',
+    text: '#166534',
+  },
 ];
 
 export const REGIONS = [

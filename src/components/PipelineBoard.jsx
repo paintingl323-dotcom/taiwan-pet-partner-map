@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Download, Plus, RotateCcw, ExternalLink, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Download, Plus, RotateCcw, ExternalLink, MapPin, ChevronDown, Check } from 'lucide-react';
 import { OUTREACH_STATUSES, STORE_CATEGORIES } from '../data/partnersData';
 
 export default function PipelineBoard({
@@ -11,6 +11,13 @@ export default function PipelineBoard({
   onRestoreDefaults,
 }) {
   const [activeTab, setActiveTab] = useState('all');
+  const [openMenuStoreId, setOpenMenuStoreId] = useState(null);
+
+  useEffect(() => {
+    const closeMenu = () => setOpenMenuStoreId(null);
+    window.addEventListener('click', closeMenu);
+    return () => window.removeEventListener('click', closeMenu);
+  }, []);
 
   const filtered =
     activeTab === 'all' ? stores : stores.filter((s) => s.status === activeTab);
@@ -227,6 +234,9 @@ export default function PipelineBoard({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filtered.map((store) => {
               const catObj = STORE_CATEGORIES.find((c) => c.id === store.category);
+              const statusObj =
+                OUTREACH_STATUSES.find((st) => st.id === store.status) || OUTREACH_STATUSES[0];
+              const isMenuOpen = openMenuStoreId === store.id;
               const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                 `${store.name} ${store.address}`
               )}`;
@@ -243,6 +253,7 @@ export default function PipelineBoard({
                     justifyContent: 'space-between',
                     gap: 14,
                     border: '1px solid rgba(20,19,18,0.06)',
+                    borderLeft: `5px solid ${statusObj.color}`,
                   }}
                 >
                   <div style={{ flex: '1 1 280px', minWidth: 0 }}>
@@ -285,27 +296,109 @@ export default function PipelineBoard({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <select
-                      aria-label={`${store.name} 拓點狀態`}
-                      value={store.status}
-                      onChange={(e) => onUpdateStore(store.id, { status: e.target.value })}
-                      style={{
-                        height: 36,
-                        padding: '0 12px',
-                        borderRadius: 999,
-                        border: '1px solid #DCD7CE',
-                        background: '#FCFBF9',
-                        fontSize: 13,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                      }}
+                    <div
+                      style={{ position: 'relative' }}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {OUTREACH_STATUSES.map((st) => (
-                        <option key={st.id} value={st.id}>
-                          ● {st.label}
-                        </option>
-                      ))}
-                    </select>
+                      <button
+                        type="button"
+                        aria-label={`${store.name} 拓點狀態`}
+                        onClick={() =>
+                          setOpenMenuStoreId(isMenuOpen ? null : store.id)
+                        }
+                        style={{
+                          height: 36,
+                          padding: '0 13px',
+                          borderRadius: 999,
+                          border: `1.5px solid ${statusObj.border || statusObj.color}`,
+                          background: statusObj.bg,
+                          color: statusObj.text,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 7,
+                          transition: 'transform 0.12s ease, box-shadow 0.15s ease',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 8.5,
+                            height: 8.5,
+                            borderRadius: 999,
+                            background: statusObj.color,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <span>{statusObj.label}</span>
+                        <ChevronDown size={14} style={{ opacity: 0.8 }} />
+                      </button>
+
+                      {isMenuOpen && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 'calc(100% + 6px)',
+                            right: 0,
+                            minWidth: 168,
+                            background: '#FCFBF9',
+                            borderRadius: 16,
+                            padding: 6,
+                            boxShadow:
+                              '0 12px 28px rgba(20,19,18,0.16), 0 0 0 1px rgba(20,19,18,0.08)',
+                            zIndex: 55,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 4,
+                          }}
+                        >
+                          {OUTREACH_STATUSES.map((st) => {
+                            const selected = store.status === st.id;
+                            return (
+                              <button
+                                key={st.id}
+                                type="button"
+                                onClick={() => {
+                                  onUpdateStore(store.id, { status: st.id });
+                                  setOpenMenuStoreId(null);
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 11px',
+                                  borderRadius: 11,
+                                  border: selected
+                                    ? `1px solid ${st.border || st.color}`
+                                    : '1px solid transparent',
+                                  background: selected ? st.bg : 'transparent',
+                                  color: selected ? st.text : '#292524',
+                                  fontSize: 13,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  gap: 8,
+                                }}
+                              >
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                                  <span
+                                    style={{
+                                      width: 8.5,
+                                      height: 8.5,
+                                      borderRadius: 999,
+                                      background: st.color,
+                                    }}
+                                  />
+                                  {st.label}
+                                </span>
+                                {selected && <Check size={14} color={st.color} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
 
                     <button
                       type="button"
