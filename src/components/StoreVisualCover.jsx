@@ -11,7 +11,6 @@ function latLngToTileInfo(lat, lng, zoom = 16) {
 
   const xTile = Math.floor(xf);
   const yTile = Math.floor(yf);
-  // Clamp marker position safely within visible card area
   const pinLeftPct = Math.max(24, Math.min(76, Math.round((xf - xTile) * 100)));
   const pinTopPct = Math.max(26, Math.min(68, Math.round((yf - yTile) * 100)));
 
@@ -36,21 +35,33 @@ export default function StoreVisualCover({
   height,
   hideActions = false,
 }) {
-  const [imgError, setImgError] = useState(false);
+  const [customUrlFailed, setCustomUrlFailed] = useState(false);
+  const [bundledFailed, setBundledFailed] = useState(false);
+  const [svApiFailed, setSvApiFailed] = useState(false);
 
   const statusObj =
     OUTREACH_STATUSES.find((s) => s.id === store.status) || OUTREACH_STATUSES[0];
   const catObj =
     STORE_CATEGORIES.find((c) => c.id === store.category) || STORE_CATEGORIES[1];
 
-  const streetViewPhotoUrl =
-    googleApiKey && !imgError
-      ? `https://maps.googleapis.com/maps/api/streetview?size=640x480&location=${encodeURIComponent(
-          `${store.address}`
-        )}&fov=80&pitch=5&source=outdoor&key=${encodeURIComponent(googleApiKey)}`
-      : null;
+  // 1. User-supplied custom photoUrl
+  // 2. Bundled real store/storefront photo (./stores/<id>.jpg)
+  // 3. Google Street View Static API (if user entered an API key for newly added stores)
+  let activeRealPhoto = null;
+  let onRealPhotoError = null;
 
-  const directPhotoUrl = !imgError && store.photoUrl ? store.photoUrl : streetViewPhotoUrl;
+  if (store.photoUrl && !customUrlFailed) {
+    activeRealPhoto = store.photoUrl;
+    onRealPhotoError = () => setCustomUrlFailed(true);
+  } else if (!String(store.id).startsWith('custom-') && !bundledFailed) {
+    activeRealPhoto = `./stores/${store.id}.jpg`;
+    onRealPhotoError = () => setBundledFailed(true);
+  } else if (googleApiKey && !svApiFailed) {
+    activeRealPhoto = `https://maps.googleapis.com/maps/api/streetview?size=640x480&location=${encodeURIComponent(
+      `${store.address}`
+    )}&fov=80&pitch=5&source=outdoor&key=${encodeURIComponent(googleApiKey)}`;
+    onRealPhotoError = () => setSvApiFailed(true);
+  }
 
   const tileInfo = latLngToTileInfo(
     typeof store.lat === 'number' ? store.lat : 22.642,
@@ -68,21 +79,30 @@ export default function StoreVisualCover({
         ...(height ? { height, aspectRatio: 'auto', marginBottom: 0, borderRadius: 0 } : {}),
       }}
     >
-      {/* LAYER 1: Real Storefront Photo (when custom photoUrl or Google Street View API Key is active) OR Real Address Street-Block Tile */}
-      {directPhotoUrl ? (
-        <img
-          src={directPhotoUrl}
-          alt={`${store.name} 門牌實景`}
-          loading="lazy"
-          onError={() => setImgError(true)}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-        />
+      {activeRealPhoto ? (
+        <>
+          <img
+            src={activeRealPhoto}
+            alt={`${store.name} 真實店面照片`}
+            loading="lazy"
+            onError={onRealPhotoError}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(180deg, rgba(20,19,18,0.22) 0%, rgba(20,19,18,0) 42%, rgba(20,19,18,0.62) 100%)',
+            }}
+          />
+        </>
       ) : (
         <>
           <img
@@ -98,7 +118,6 @@ export default function StoreVisualCover({
               filter: 'saturate(0.92) contrast(1.03) brightness(0.99)',
             }}
           />
-          {/* Subtle top/bottom vignette so badges & address bar read with high contrast */}
           <div
             style={{
               position: 'absolute',
@@ -107,8 +126,6 @@ export default function StoreVisualCover({
                 'linear-gradient(180deg, rgba(20,19,18,0.18) 0%, rgba(20,19,18,0.02) 45%, rgba(20,19,18,0.68) 100%)',
             }}
           />
-
-          {/* Exact Store Pin on the Real Street Map */}
           <div
             style={{
               position: 'absolute',
@@ -185,7 +202,7 @@ export default function StoreVisualCover({
         </div>
       )}
 
-      {/* Bottom Real Address Bar + 1-Click Free 360° Real Storefront Street View Link */}
+      {/* Bottom Real Address Bar + 1-Click 360° Street View */}
       <div
         style={{
           position: 'absolute',
@@ -225,7 +242,7 @@ export default function StoreVisualCover({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            title="免費開啟 Google 360° 真實店門口街景照片"
+            title="開啟 Google 360° 店門口街景"
             style={{
               flexShrink: 0,
               fontSize: 11,
