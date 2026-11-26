@@ -124,10 +124,23 @@ export default function App() {
   // Map & Selection State
   const [hoveredStoreId, setHoveredStoreId] = useState(null);
   const [selectedStoreId, setSelectedStoreId] = useState(() => urlParams.get('store') || null);
+  const [pipelineFocusId, setPipelineFocusId] = useState(null);
   const [mapMode, setMapMode] = useState(() => urlParams.get('mapMode') || 'cluster'); // 'cluster' | 'gmaps'
   const [fitTrigger, setFitTrigger] = useState(0);
   const [mobileShowMap, setMobileShowMap] = useState(() => urlParams.get('mobileMap') === '1');
   const initialDrawerTab = urlParams.get('tab') || 'overview';
+
+  // Auto-scroll the left Explore card list to the selected store card whenever selectedStoreId changes!
+  useEffect(() => {
+    if (activeNav !== 'explore' || !selectedStoreId) return undefined;
+    const timer = setTimeout(() => {
+      const cardEl = document.getElementById(`explore-card-${selectedStoreId}`);
+      if (cardEl) {
+        cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 90);
+    return () => clearTimeout(timer);
+  }, [activeNav, selectedStoreId]);
 
   // Add / Edit Store Modal & Street View API Key Modal
   const [storeModalOpen, setStoreModalOpen] = useState(false);
@@ -247,12 +260,21 @@ export default function App() {
   };
 
   const handleOpenStoreInMap = (store) => {
-    setSelectedRegion('all');
+    setSelectedRegion(store.region || 'all');
+    setSelectedDistrict('all');
     setSelectedCategory('all');
     setSelectedStatus('all');
+    setSearchQuery('');
     setOnlyStarred(false);
-    setActiveNav('explore');
+    setMapMode('cluster');
     setSelectedStoreId(store.id);
+    setActiveNav('explore');
+    setMobileShowMap(false);
+  };
+
+  const handleJumpToPipeline = (storeId) => {
+    setPipelineFocusId(storeId);
+    setActiveNav('pipeline');
   };
 
   const handleResetFilters = () => {
@@ -625,6 +647,24 @@ export default function App() {
                     );
                   })}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => handleJumpToPipeline(selectedStoreId)}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#141312',
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    textDecoration: 'underline',
+                    padding: '2px 0',
+                  }}
+                  title="切換至拓點進度看板檢視清單"
+                >
+                  進度看板 ↗
+                </button>
               </div>
 
               {/* Scrollable 2-Column Visual Store Card Grid */}
@@ -661,6 +701,7 @@ export default function App() {
                       return (
                         <article
                           key={store.id}
+                          id={`explore-card-${store.id}`}
                           className={`mt-place-card ${isSelected ? 'is-selected' : ''}`}
                           onMouseEnter={() => setHoveredStoreId(store.id)}
                           onMouseLeave={() => setHoveredStoreId(null)}
@@ -713,6 +754,7 @@ export default function App() {
                   setEditingStore(st);
                   setStoreModalOpen(true);
                 }}
+                onJumpToPipeline={handleJumpToPipeline}
               />
             )}
 
@@ -753,6 +795,7 @@ export default function App() {
         {activeNav === 'pipeline' && (
           <PipelineBoard
             stores={stores}
+            highlightedStoreId={pipelineFocusId}
             onUpdateStore={handleUpdateStore}
             onOpenStoreInMap={handleOpenStoreInMap}
             onOpenAddModal={() => {

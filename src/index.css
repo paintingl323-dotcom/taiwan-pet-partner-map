@@ -775,7 +775,8 @@ textarea {
 .mt-map-pill.is-highlighted {
   background: #141312;
   color: #faf8f5;
-  transform: scale(1.08) translateY(-2px);
+  transform: scale(1.12) translateY(-3px);
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.38), 0 8px 20px rgba(20, 19, 18, 0.32);
   z-index: 900 !important;
 }
 

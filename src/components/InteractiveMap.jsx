@@ -129,25 +129,27 @@ export default function InteractiveMap({
   };
 
   useEffect(() => {
+    if (selectedStore && fitTrigger === 0) return;
     if (fitTrigger > 0 || selectedRegion !== '高雄') {
       fitAllVisibleStores();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitTrigger]);
 
-  // Pan smoothly when a store is selected
+  // Pan & zoom smoothly right onto the selected store pin (works both on initial jump from PipelineBoard and in-map click!)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !selectedStore) return;
     if (typeof selectedStore.lat !== 'number' || typeof selectedStore.lng !== 'number') return;
 
+    map.invalidateSize();
     const isDesktop = window.innerWidth >= 1024;
-    const targetZoom = Math.max(map.getZoom(), 14);
+    const targetZoom = 16;
     const point = map.project([selectedStore.lat, selectedStore.lng], targetZoom);
-    // Shift center slightly so selected pin appears between left panel and right detail drawer
-    const offsetX = isDesktop ? -40 : 0;
+    // Center pin cleanly in the visible middle window between Left Panel (542px) and Right Detail Drawer (470px)
+    const offsetX = isDesktop ? -28 : 0;
     const adjustedLatLng = map.unproject(point.add([offsetX, 0]), targetZoom);
-    map.flyTo(adjustedLatLng, targetZoom, { duration: 0.4 });
+    map.flyTo(adjustedLatLng, targetZoom, { duration: 0.45 });
   }, [selectedStore]);
 
   const activeGmapsStore = selectedStore || stores[0] || null;

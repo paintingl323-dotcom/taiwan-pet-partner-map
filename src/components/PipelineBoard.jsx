@@ -1,9 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Download, Plus, RotateCcw, ExternalLink, MapPin, ChevronDown, Check } from 'lucide-react';
-import { OUTREACH_STATUSES, STORE_CATEGORIES } from '../data/partnersData';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Download,
+  Plus,
+  RotateCcw,
+  ExternalLink,
+  MapPin,
+  ChevronDown,
+  Check,
+  Search,
+  X,
+  Compass,
+} from 'lucide-react';
+import { OUTREACH_STATUSES, REGIONS, STORE_CATEGORIES } from '../data/partnersData';
 
 export default function PipelineBoard({
   stores,
+  highlightedStoreId = null,
   onUpdateStore,
   onOpenStoreInMap,
   onOpenAddModal,
@@ -11,6 +23,8 @@ export default function PipelineBoard({
   onRestoreDefaults,
 }) {
   const [activeTab, setActiveTab] = useState('all');
+  const [regionFilter, setRegionFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [openMenuStoreId, setOpenMenuStoreId] = useState(null);
 
   useEffect(() => {
@@ -19,8 +33,37 @@ export default function PipelineBoard({
     return () => window.removeEventListener('click', closeMenu);
   }, []);
 
-  const filtered =
-    activeTab === 'all' ? stores : stores.filter((s) => s.status === activeTab);
+  // Auto-scroll to highlighted store when jumping from 圖一 (Explore Map) -> 圖二 (Pipeline Board)
+  useEffect(() => {
+    if (!highlightedStoreId) return;
+    setActiveTab('all');
+    setRegionFilter('all');
+    setSearchQuery('');
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`pipeline-row-${highlightedStoreId}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [highlightedStoreId]);
+
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return stores.filter((s) => {
+      if (activeTab !== 'all' && s.status !== activeTab) return false;
+      if (regionFilter !== 'all') {
+        if (regionFilter === '高屏') {
+          if (s.region !== '高雄' && s.region !== '屏東') return false;
+        } else if (s.region !== regionFilter) {
+          return false;
+        }
+      }
+      if (q) {
+        const hay = `${s.name} ${s.region} ${s.district} ${s.category} ${s.address} ${s.collabModel} ${s.note || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [stores, activeTab, regionFilter, searchQuery]);
 
   const exportCsv = () => {
     const headers = [
@@ -68,7 +111,7 @@ export default function PipelineBoard({
   return (
     <div className="mt-scroll-page">
       <div className="mt-page-container">
-        {/* Top Header + Mindtrip Solid Black Action Pill (matching user's /agents screenshot) */}
+        {/* Top Header */}
         <div
           style={{
             display: 'flex',
@@ -84,7 +127,7 @@ export default function PipelineBoard({
               拓點進度看板
             </h1>
             <p style={{ fontSize: 14.5, color: '#57534E', margin: 0 }}>
-              一眼掌握全台 {stores.length} 家合作目標門市的寄樣、洽談與上架進度，隨時匯出業務報表。
+              一眼掌握全台 {stores.length} 家門市進度；<strong>點擊任一店名、照片或「跳轉地圖位置」</strong>即可直接飛往互動地圖對應釘選！
             </p>
           </div>
 
@@ -111,7 +154,7 @@ export default function PipelineBoard({
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: 12,
-            marginBottom: 24,
+            marginBottom: 20,
           }}
         >
           {OUTREACH_STATUSES.map((st) => {
@@ -119,7 +162,7 @@ export default function PipelineBoard({
             return (
               <div
                 key={st.id}
-                onClick={() => setActiveTab(st.id)}
+                onClick={() => setActiveTab(activeTab === st.id ? 'all' : st.id)}
                 style={{
                   padding: '16px 18px',
                   borderRadius: 20,
@@ -154,6 +197,67 @@ export default function PipelineBoard({
           })}
         </div>
 
+        {/* NEW: Search Box + Region Quick Filter inside Pipeline Board! */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+            marginBottom: 16,
+            background: '#F7F5F0',
+            padding: '12px 16px',
+            borderRadius: 20,
+            border: '1px solid rgba(20,19,18,0.06)',
+          }}
+        >
+          <div className="mt-search-box" style={{ flex: '1 1 260px', background: '#FCFBF9', height: 40 }}>
+            <Search size={16} color="#78716C" />
+            <input
+              type="text"
+              placeholder="輸入店名快速找店（例如：貓咪、半刻貓、屏東、左營、美容...）"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                className="mt-clear-btn"
+                onClick={() => setSearchQuery('')}
+                aria-label="清除搜尋"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {REGIONS.filter((r) => r.id !== '高屏').map((reg) => {
+              const isSel = regionFilter === reg.id;
+              return (
+                <button
+                  key={reg.id}
+                  type="button"
+                  onClick={() => setRegionFilter(reg.id)}
+                  style={{
+                    height: 34,
+                    padding: '0 12px',
+                    borderRadius: 999,
+                    border: isSel ? '1px solid #141312' : '1px solid #DCD7CE',
+                    background: isSel ? '#141312' : '#FCFBF9',
+                    color: isSel ? '#FAF8F5' : '#57534E',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {reg.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Mindtrip 2px Underline Tabs + Utility Reset */}
         <div
           style={{
@@ -172,7 +276,7 @@ export default function PipelineBoard({
               className={`mt-underline-tab ${activeTab === 'all' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('all')}
             >
-              全部店家 ({stores.length})
+              全部進度 ({filtered.length})
             </button>
             {OUTREACH_STATUSES.map((st) => (
               <button
@@ -207,7 +311,7 @@ export default function PipelineBoard({
           </div>
         </div>
 
-        {/* Clean Human-Friendly Card List (No Dense Admin Spreadsheet!) */}
+        {/* Clean Human-Friendly Card List with Real Store Thumbnails + 1-Click Jump to Map */}
         {filtered.length === 0 ? (
           <div
             style={{
@@ -219,15 +323,19 @@ export default function PipelineBoard({
           >
             <div style={{ fontSize: 28, marginBottom: 8 }}>👀</div>
             <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 14 }}>
-              目前此階段尚無店家紀錄
+              找不到符合條件的店家紀錄
             </div>
             <button
               type="button"
               className="mt-black-cta"
               style={{ height: 38, fontSize: 13 }}
-              onClick={() => setActiveTab('all')}
+              onClick={() => {
+                setActiveTab('all');
+                setRegionFilter('all');
+                setSearchQuery('');
+              }}
             >
-              返回檢視全部店家
+              顯示全部店家
             </button>
           </div>
         ) : (
@@ -237,75 +345,141 @@ export default function PipelineBoard({
               const statusObj =
                 OUTREACH_STATUSES.find((st) => st.id === store.status) || OUTREACH_STATUSES[0];
               const isMenuOpen = openMenuStoreId === store.id;
+              const isHighlighted = highlightedStoreId === store.id;
+              const thumbSrc = store.photoUrl
+                ? store.photoUrl
+                : !String(store.id).startsWith('custom-')
+                ? `./stores/${store.id}.jpg`
+                : null;
               const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                 `${store.name} ${store.address}`
               )}`;
+
               return (
                 <div
                   key={store.id}
+                  id={`pipeline-row-${store.id}`}
                   style={{
-                    background: '#F7F5F0',
+                    background: isHighlighted ? '#FEF9EC' : '#F7F5F0',
                     borderRadius: 20,
-                    padding: '16px 20px',
+                    padding: '14px 18px',
                     display: 'flex',
                     flexWrap: 'wrap',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 14,
-                    border: '1px solid rgba(20,19,18,0.06)',
+                    border: isHighlighted
+                      ? '2px solid #D97706'
+                      : '1px solid rgba(20,19,18,0.06)',
                     borderLeft: `5px solid ${statusObj.color}`,
+                    boxShadow: isHighlighted ? '0 8px 24px rgba(217,119,6,0.16)' : 'none',
+                    transition: 'all 0.2s ease',
                   }}
                 >
-                  <div style={{ flex: '1 1 280px', minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <strong style={{ fontSize: 16, color: '#141312' }}>{store.name}</strong>
-                      <span
+                  {/* Left: Clickable Store Thumbnail + Clickable Store Name -> Jumps straight to 圖一 Map! */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                      flex: '1 1 320px',
+                      minWidth: 0,
+                    }}
+                  >
+                    {thumbSrc && (
+                      <div
+                        onClick={() => onOpenStoreInMap(store)}
+                        title="點擊跳轉至互動地圖位置"
                         style={{
-                          fontSize: 12,
-                          padding: '2px 9px',
-                          borderRadius: 999,
-                          background: '#EFECE6',
-                          color: '#57534E',
-                          fontWeight: 600,
+                          width: 66,
+                          height: 66,
+                          borderRadius: 14,
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                          cursor: 'pointer',
+                          background: '#E7E2D8',
+                          border: '1px solid rgba(20,19,18,0.08)',
                         }}
                       >
-                        {catObj ? catObj.icon : '📍'} {store.category} · {store.region}
-                        {store.district}
-                      </span>
+                        <img
+                          src={thumbSrc}
+                          alt={store.name}
+                          loading="lazy"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                    )}
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => onOpenStoreInMap(store)}
+                          title="點擊跳轉至互動地圖查看此店位置"
+                          style={{
+                            border: 'none',
+                            background: 'transparent',
+                            padding: 0,
+                            fontSize: 16,
+                            fontWeight: 800,
+                            color: '#141312',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            textDecoration: 'underline',
+                            textDecorationColor: 'rgba(20,19,18,0.28)',
+                            textUnderlineOffset: '3px',
+                          }}
+                        >
+                          {store.name}
+                          <Compass size={14} color="#57534E" />
+                        </button>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            padding: '2px 9px',
+                            borderRadius: 999,
+                            background: '#EFECE6',
+                            color: '#57534E',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {catObj ? catObj.icon : '📍'} {store.category} · {store.region}
+                          {store.district}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 13, color: '#57534E', marginTop: 4 }}>
+                        {store.address} ｜ 切入建議：{store.collabModel}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="點擊直接輸入拜訪／寄樣備註..."
+                        value={store.note || ''}
+                        onChange={(e) => onUpdateStore(store.id, { note: e.target.value })}
+                        style={{
+                          marginTop: 7,
+                          width: '100%',
+                          maxWidth: 480,
+                          padding: '6px 11px',
+                          borderRadius: 10,
+                          border: '1px solid #DCD7CE',
+                          background: '#FCFBF9',
+                          fontSize: 12.5,
+                          color: '#141312',
+                        }}
+                      />
                     </div>
-                    <div style={{ fontSize: 13, color: '#57534E', marginTop: 4 }}>
-                      {store.address} ｜ 切入建議：{store.collabModel}
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="點擊直接輸入拜訪／寄樣備註..."
-                      value={store.note || ''}
-                      onChange={(e) => onUpdateStore(store.id, { note: e.target.value })}
-                      style={{
-                        marginTop: 8,
-                        width: '100%',
-                        maxWidth: 480,
-                        padding: '6px 11px',
-                        borderRadius: 10,
-                        border: '1px solid #DCD7CE',
-                        background: '#FCFBF9',
-                        fontSize: 12.5,
-                        color: '#141312',
-                      }}
-                    />
                   </div>
 
+                  {/* Right: Color-Coded Status Dropdown + Prominent Jump-to-Map CTA + Google Maps */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <div
-                      style={{ position: 'relative' }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                    <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
                         aria-label={`${store.name} 拓點狀態`}
-                        onClick={() =>
-                          setOpenMenuStoreId(isMenuOpen ? null : store.id)
-                        }
+                        onClick={() => setOpenMenuStoreId(isMenuOpen ? null : store.id)}
                         style={{
                           height: 36,
                           padding: '0 13px',
@@ -319,7 +493,6 @@ export default function PipelineBoard({
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 7,
-                          transition: 'transform 0.12s ease, box-shadow 0.15s ease',
                         }}
                       >
                         <span
@@ -402,11 +575,12 @@ export default function PipelineBoard({
 
                     <button
                       type="button"
-                      className="mt-add-pill-btn"
+                      className="mt-black-cta"
+                      style={{ height: 36, padding: '0 14px', fontSize: 12.5 }}
                       onClick={() => onOpenStoreInMap(store)}
                     >
                       <MapPin size={13} />
-                      地圖定位
+                      跳轉地圖位置
                     </button>
 
                     <a
@@ -414,7 +588,7 @@ export default function PipelineBoard({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-add-pill-btn"
-                      style={{ textDecoration: 'none' }}
+                      style={{ textDecoration: 'none', height: 36 }}
                     >
                       Google Maps
                       <ExternalLink size={13} />

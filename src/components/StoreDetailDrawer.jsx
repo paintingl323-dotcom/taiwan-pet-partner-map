@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ExternalLink, Edit3, Copy, Check, MapPin, Sparkles } from 'lucide-react';
+import { X, ExternalLink, Edit3, Copy, Check, MapPin, Sparkles, CheckSquare } from 'lucide-react';
 import StoreVisualCover from './StoreVisualCover';
 import { OUTREACH_STATUSES, STORE_CATEGORIES } from '../data/partnersData';
 
@@ -10,6 +10,7 @@ export default function StoreDetailDrawer({
   onClose,
   onUpdateStore,
   onEditModal,
+  onJumpToPipeline,
   googleApiKey = '',
   initialTab = 'overview',
 }) {
@@ -58,6 +59,15 @@ export default function StoreDetailDrawer({
             <X size={18} />
           </button>
           <div className="mt-hero-dark-pills">
+            <button
+              type="button"
+              className="mt-hero-pill"
+              onClick={() => onJumpToPipeline && onJumpToPipeline(store.id)}
+              title="跳轉至『拓點進度看板』對應列"
+            >
+              <CheckSquare size={13} />
+              進度看板
+            </button>
             <button
               type="button"
               className="mt-hero-pill"
