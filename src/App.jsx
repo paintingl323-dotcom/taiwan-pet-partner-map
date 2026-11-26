@@ -411,6 +411,7 @@ export default function App() {
             {/* Full-Bleed Map Backdrop */}
             <InteractiveMap
               stores={filteredStores}
+              selectedRegion={selectedRegion}
               hoveredStoreId={hoveredStoreId}
               selectedStore={selectedStore}
               onSelectStore={(s) => {

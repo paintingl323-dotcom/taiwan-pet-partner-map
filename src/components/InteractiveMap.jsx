@@ -28,6 +28,7 @@ function escapeHtml(text) {
 
 export default function InteractiveMap({
   stores,
+  selectedRegion = '高雄',
   hoveredStoreId,
   selectedStore,
   onSelectStore,
@@ -128,7 +129,7 @@ export default function InteractiveMap({
   };
 
   useEffect(() => {
-    if (fitTrigger > 0) {
+    if (fitTrigger > 0 || selectedRegion !== '高雄') {
       fitAllVisibleStores();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
