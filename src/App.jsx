@@ -14,6 +14,7 @@ import {
   Map as MapIcon,
   List,
   Camera,
+  ArrowLeft,
 } from 'lucide-react';
 import {
   INITIAL_PARTNER_STORES,
@@ -34,6 +35,13 @@ import PipelineBoard from './components/PipelineBoard';
 const STORAGE_KEY_STORES = 'pawmap_partner_stores_v1';
 const STORAGE_KEY_STARRED = 'pawmap_starred_ids_v1';
 const STORAGE_KEY_GMAPS = 'pawmap_google_maps_api_key_v1';
+
+const NAV_LABELS = {
+  explore: '互動地圖',
+  pipeline: '進度看板',
+  calculator: '分潤試算',
+  home: '部署首頁',
+};
 
 function MindtripSparkle({ size = 22 }) {
   return (
@@ -125,10 +133,66 @@ export default function App() {
   const [hoveredStoreId, setHoveredStoreId] = useState(null);
   const [selectedStoreId, setSelectedStoreId] = useState(() => urlParams.get('store') || null);
   const [pipelineFocusId, setPipelineFocusId] = useState(null);
+  const [pipelineTab, setPipelineTab] = useState('all');
+  const [pipelineRegion, setPipelineRegion] = useState('all');
+  const [pipelineSearch, setPipelineSearch] = useState('');
+  const [backStack, setBackStack] = useState([]);
   const [mapMode, setMapMode] = useState(() => urlParams.get('mapMode') || 'cluster'); // 'cluster' | 'gmaps'
   const [fitTrigger, setFitTrigger] = useState(0);
   const [mobileShowMap, setMobileShowMap] = useState(() => urlParams.get('mobileMap') === '1');
   const initialDrawerTab = urlParams.get('tab') || 'overview';
+
+  const pushBackSnapshot = () => {
+    const snap = {
+      activeNav,
+      selectedRegion,
+      selectedDistrict,
+      selectedCategory,
+      selectedStatus,
+      onlyStarred,
+      selectedStoreId,
+      pipelineFocusId,
+    };
+    setBackStack((prev) => [...prev.slice(-19), snap]);
+    try {
+      window.history.pushState({ pawmapIdx: Date.now() }, '');
+    } catch {
+      // ignore
+    }
+  };
+
+  const applyBackPop = (stackArr) => {
+    if (!stackArr.length) return stackArr;
+    const last = stackArr[stackArr.length - 1];
+    setActiveNav(last.activeNav);
+    setSelectedRegion(last.selectedRegion);
+    setSelectedDistrict(last.selectedDistrict);
+    setSelectedCategory(last.selectedCategory);
+    setSelectedStatus(last.selectedStatus);
+    setOnlyStarred(last.onlyStarred);
+    setSelectedStoreId(last.selectedStoreId);
+    setPipelineFocusId(last.pipelineFocusId);
+    return stackArr.slice(0, -1);
+  };
+
+  const handleGoBack = () => {
+    setBackStack((prev) => applyBackPop(prev));
+  };
+
+  // Support browser native Back button (←) and phone swipe-back!
+  useEffect(() => {
+    const onPopState = () => {
+      setBackStack((prev) => applyBackPop(prev));
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const navigateToTab = (nextNav) => {
+    if (nextNav === activeNav) return;
+    pushBackSnapshot();
+    setActiveNav(nextNav);
+  };
 
   // Auto-scroll the left Explore card list to the selected store card whenever selectedStoreId changes!
   useEffect(() => {
@@ -251,6 +315,7 @@ export default function App() {
   };
 
   const handleJumpToExplore = ({ region, category, onlyStar = false }) => {
+    pushBackSnapshot();
     if (region !== undefined) setSelectedRegion(region);
     if (category !== undefined) setSelectedCategory(category);
     setOnlyStarred(onlyStar);
@@ -260,6 +325,10 @@ export default function App() {
   };
 
   const handleOpenStoreInMap = (store) => {
+    pushBackSnapshot();
+    if (activeNav === 'pipeline') {
+      setPipelineFocusId(store.id);
+    }
     setSelectedRegion(store.region || 'all');
     setSelectedDistrict('all');
     setSelectedCategory('all');
@@ -273,7 +342,13 @@ export default function App() {
   };
 
   const handleJumpToPipeline = (storeId) => {
-    setPipelineFocusId(storeId);
+    pushBackSnapshot();
+    if (storeId) {
+      setPipelineTab('all');
+      setPipelineRegion('all');
+      setPipelineSearch('');
+      setPipelineFocusId(storeId);
+    }
     setActiveNav('pipeline');
   };
 
@@ -295,6 +370,8 @@ export default function App() {
 
   const currentRegionObj = REGIONS.find((r) => r.id === selectedRegion) || REGIONS[0];
   const activePartnersCount = stores.filter((s) => s.status === '已上架合作').length;
+  const lastBackSnap = backStack.length > 0 ? backStack[backStack.length - 1] : null;
+  const prevPageLabel = lastBackSnap ? NAV_LABELS[lastBackSnap.activeNav] || '上一頁' : '';
 
   return (
     <div className="mt-shell">
@@ -308,7 +385,7 @@ export default function App() {
             type="button"
             className="mt-sparkle-btn"
             title="pawmap. 毛孩通路拓點地圖"
-            onClick={() => setActiveNav('home')}
+            onClick={() => navigateToTab('home')}
           >
             <MindtripSparkle size={24} />
           </button>
@@ -318,7 +395,7 @@ export default function App() {
             <button
               type="button"
               className={`mt-rail-btn ${activeNav === 'home' ? 'is-active' : ''}`}
-              onClick={() => setActiveNav('home')}
+              onClick={() => navigateToTab('home')}
               aria-label="通路部署首頁"
             >
               <Home size={21} strokeWidth={activeNav === 'home' ? 2.4 : 1.9} />
@@ -333,6 +410,9 @@ export default function App() {
               type="button"
               className={`mt-rail-btn ${activeNav === 'explore' && !onlyStarred ? 'is-active' : ''}`}
               onClick={() => {
+                if (activeNav !== 'explore' || onlyStarred) {
+                  pushBackSnapshot();
+                }
                 setOnlyStarred(false);
                 setActiveNav('explore');
               }}
@@ -352,7 +432,7 @@ export default function App() {
             <button
               type="button"
               className={`mt-rail-btn ${activeNav === 'calculator' ? 'is-active' : ''}`}
-              onClick={() => setActiveNav('calculator')}
+              onClick={() => navigateToTab('calculator')}
               aria-label="寄賣分潤試算"
             >
               <Calculator size={21} strokeWidth={activeNav === 'calculator' ? 2.4 : 1.9} />
@@ -366,7 +446,7 @@ export default function App() {
             <button
               type="button"
               className={`mt-rail-btn ${activeNav === 'pipeline' ? 'is-active' : ''}`}
-              onClick={() => setActiveNav('pipeline')}
+              onClick={() => navigateToTab('pipeline')}
               aria-label="拓點進度看板"
             >
               <CheckSquare size={21} strokeWidth={activeNav === 'pipeline' ? 2.4 : 1.9} />
@@ -427,6 +507,20 @@ export default function App() {
 
       {/* ==================== MAIN CONTENT STAGE ==================== */}
       <main className="mt-main">
+        {/* GLOBAL VISIBLE "← 返回上一頁" PILL BUTTON (Mindtrip-style back navigation) */}
+        {backStack.length > 0 && !(activeNav === 'explore' && selectedStore) && (
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className={`mt-global-back-pill ${
+              activeNav === 'explore' ? 'mt-global-back-pill--explore' : ''
+            }`}
+          >
+            <ArrowLeft size={15} />
+            返回{prevPageLabel}
+          </button>
+        )}
+
         {/* VIEW 1: EXPLORE SPLIT-SCREEN (FLOATING LEFT PANEL + FULL-BLEED MAP) */}
         {activeNav === 'explore' && (
           <div className="mt-explore-stage">
@@ -747,6 +841,8 @@ export default function App() {
                 isStarred={starredIds.includes(selectedStore.id)}
                 onToggleStar={handleToggleStar}
                 onClose={() => setSelectedStoreId(null)}
+                onBack={backStack.length > 0 ? handleGoBack : null}
+                backLabel={prevPageLabel}
                 onUpdateStore={handleUpdateStore}
                 googleApiKey={googleApiKey}
                 initialTab={initialDrawerTab}
@@ -781,7 +877,7 @@ export default function App() {
             onCycleStatus={handleCycleStatus}
             onJumpToExplore={handleJumpToExplore}
             onOpenStoreInMap={handleOpenStoreInMap}
-            onNavigateTab={setActiveNav}
+            onNavigateTab={navigateToTab}
             googleApiKey={googleApiKey}
           />
         )}
@@ -796,6 +892,12 @@ export default function App() {
           <PipelineBoard
             stores={stores}
             highlightedStoreId={pipelineFocusId}
+            activeTab={pipelineTab}
+            setActiveTab={setPipelineTab}
+            regionFilter={pipelineRegion}
+            setRegionFilter={setPipelineRegion}
+            searchQuery={pipelineSearch}
+            setSearchQuery={setPipelineSearch}
             onUpdateStore={handleUpdateStore}
             onOpenStoreInMap={handleOpenStoreInMap}
             onOpenAddModal={() => {

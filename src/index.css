@@ -1498,7 +1498,39 @@ textarea {
   display: none;
 }
 
+.mt-global-back-pill {
+  position: absolute;
+  top: 16px;
+  left: 24px;
+  z-index: 45;
+  height: 36px;
+  padding: 0 15px 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(20, 19, 18, 0.12);
+  background: rgba(252, 251, 249, 0.96);
+  backdrop-filter: blur(10px);
+  color: #141312;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(20, 19, 18, 0.14);
+}
+
+.mt-global-back-pill--explore {
+  top: 20px;
+  left: 560px;
+}
+
 @media (max-width: 1023px) {
+  .mt-global-back-pill,
+  .mt-global-back-pill--explore {
+    top: 10px;
+    left: 12px;
+  }
+
   .mt-shell {
     flex-direction: column;
   }

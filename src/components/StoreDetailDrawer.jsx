@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ExternalLink, Edit3, Copy, Check, MapPin, Sparkles, CheckSquare } from 'lucide-react';
+import { X, ArrowLeft, ExternalLink, Edit3, Copy, Check, MapPin, Sparkles, CheckSquare } from 'lucide-react';
 import StoreVisualCover from './StoreVisualCover';
 import { OUTREACH_STATUSES, STORE_CATEGORIES } from '../data/partnersData';
 
@@ -8,6 +8,8 @@ export default function StoreDetailDrawer({
   isStarred,
   onToggleStar,
   onClose,
+  onBack,
+  backLabel = '',
   onUpdateStore,
   onEditModal,
   onJumpToPipeline,
@@ -55,9 +57,36 @@ export default function StoreDetailDrawer({
           hideActions
         />
         <div className="mt-detail-hero-bar">
-          <button type="button" className="mt-circle-icon-btn" onClick={onClose} title="關閉面板">
-            <X size={18} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            {onBack && backLabel && (
+              <button
+                type="button"
+                onClick={onBack}
+                title={`返回${backLabel}`}
+                style={{
+                  height: 36,
+                  padding: '0 13px 0 10px',
+                  borderRadius: 999,
+                  border: 'none',
+                  background: 'rgba(252, 251, 249, 0.95)',
+                  color: '#141312',
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.18)',
+                }}
+              >
+                <ArrowLeft size={15} />
+                返回{backLabel}
+              </button>
+            )}
+            <button type="button" className="mt-circle-icon-btn" onClick={onClose} title="關閉面板">
+              <X size={18} />
+            </button>
+          </div>
           <div className="mt-hero-dark-pills">
             <button
               type="button"

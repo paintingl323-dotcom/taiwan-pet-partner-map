@@ -16,15 +16,18 @@ import { OUTREACH_STATUSES, REGIONS, STORE_CATEGORIES } from '../data/partnersDa
 export default function PipelineBoard({
   stores,
   highlightedStoreId = null,
+  activeTab,
+  setActiveTab,
+  regionFilter,
+  setRegionFilter,
+  searchQuery,
+  setSearchQuery,
   onUpdateStore,
   onOpenStoreInMap,
   onOpenAddModal,
   onResetAllStatuses,
   onRestoreDefaults,
 }) {
-  const [activeTab, setActiveTab] = useState('all');
-  const [regionFilter, setRegionFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [openMenuStoreId, setOpenMenuStoreId] = useState(null);
 
   useEffect(() => {
@@ -33,12 +36,9 @@ export default function PipelineBoard({
     return () => window.removeEventListener('click', closeMenu);
   }, []);
 
-  // Auto-scroll to highlighted store when jumping from 圖一 (Explore Map) -> 圖二 (Pipeline Board)
+  // Auto-scroll to highlighted store when jumping to Pipeline Board
   useEffect(() => {
-    if (!highlightedStoreId) return;
-    setActiveTab('all');
-    setRegionFilter('all');
-    setSearchQuery('');
+    if (!highlightedStoreId) return undefined;
     const timer = setTimeout(() => {
       const el = document.getElementById(`pipeline-row-${highlightedStoreId}`);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
