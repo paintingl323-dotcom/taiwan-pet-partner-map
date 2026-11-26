@@ -41,7 +41,7 @@ function guessCategoryAndCollab(nameText) {
 }
 
 function detectRegionFromText(text) {
-  if (/屏東|潮州|恆春|東港|墾丁/.test(text)) return '屏東';
+  if (/屏東|潮州|恆春|東港|墾丁|內埔|萬丹|長治|九如|里港|鹽埔|高樹|萬巒|崁頂|南州|枋寮|枋山|車城|琉球|小琉球/.test(text)) return '屏東';
   if (/台南|中西區|永康|安平/.test(text)) return '台南';
   if (/台中|南屯|西屯|精誠/.test(text)) return '台中';
   if (/台北|新北|大安|士林|中正|信義/.test(text)) return '台北';

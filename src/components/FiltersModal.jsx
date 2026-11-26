@@ -34,7 +34,7 @@ export default function FiltersModal({
         <div className="mt-modal-body">
           {/* Section 1: Region */}
           <div className="mt-filter-section">
-            <h4 className="mt-filter-heading">縣市區域（高雄 83 家密集部署＋屏東＆全台示範點）</h4>
+            <h4 className="mt-filter-heading">縣市區域（高雄 83 家・屏東 62 家密集部署＋全台示範點）</h4>
             <div className="mt-chip-cloud">
               {REGIONS.map((reg) => (
                 <button
