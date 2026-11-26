@@ -51,13 +51,27 @@ function MindtripSparkle({ size = 22 }) {
 }
 
 export default function App() {
-  // Persistent Store List
+  // Persistent Store List (auto-merges new built-in stores while preserving user status/notes & custom stores!)
   const [stores, setStores] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_STORES);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const savedMap = new Map(parsed.map((s) => [s.id, s]));
+          const customStores = parsed.filter((s) => String(s.id).startsWith('custom-'));
+          const mergedBuiltIns = INITIAL_PARTNER_STORES.map((base) => {
+            const prev = savedMap.get(base.id);
+            if (!prev) return base;
+            return {
+              ...base,
+              status: prev.status || base.status,
+              note: prev.note ?? base.note,
+              photoUrl: prev.photoUrl || base.photoUrl,
+            };
+          });
+          return [...customStores, ...mergedBuiltIns];
+        }
       }
     } catch {
       // ignore storage errors
@@ -99,6 +113,7 @@ export default function App() {
 
   // Explore Filters (Default to Kaohsiung so street-level pins look crisp like Mindtrip's city view)
   const [selectedRegion, setSelectedRegion] = useState(() => urlParams.get('region') || '高雄');
+  const [selectedDistrict, setSelectedDistrict] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [onlyStarred, setOnlyStarred] = useState(false);
@@ -142,11 +157,24 @@ export default function App() {
     return store.region === regionId;
   };
 
+  const availableDistricts = useMemo(() => {
+    const counts = new Map();
+    stores.forEach((s) => {
+      if (matchesRegion(s, selectedRegion) && s.district) {
+        counts.set(s.district, (counts.get(s.district) || 0) + 1);
+      }
+    });
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [stores, selectedRegion]);
+
   // Filtered Stores
   const filteredStores = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return stores.filter((store) => {
       if (!matchesRegion(store, selectedRegion)) return false;
+      if (selectedDistrict !== 'all' && store.district !== selectedDistrict) return false;
       if (selectedCategory !== 'all' && store.category !== selectedCategory) return false;
       if (selectedStatus !== 'all' && store.status !== selectedStatus) return false;
       if (onlyStarred && !starredIds.includes(store.id)) return false;
@@ -156,7 +184,7 @@ export default function App() {
       }
       return true;
     });
-  }, [stores, selectedRegion, selectedCategory, selectedStatus, onlyStarred, starredIds, searchQuery]);
+  }, [stores, selectedRegion, selectedDistrict, selectedCategory, selectedStatus, onlyStarred, starredIds, searchQuery]);
 
   const selectedStore = useMemo(
     () => stores.find((s) => s.id === selectedStoreId) || null,
@@ -168,6 +196,7 @@ export default function App() {
 
   const handleRegionChange = (regionId) => {
     setSelectedRegion(regionId);
+    setSelectedDistrict('all');
     setRegionMenuOpen(false);
     setTimeout(triggerFit, 40);
   };
@@ -228,6 +257,7 @@ export default function App() {
 
   const handleResetFilters = () => {
     setSelectedRegion('all');
+    setSelectedDistrict('all');
     setSelectedCategory('all');
     setSelectedStatus('all');
     setOnlyStarred(false);
@@ -236,6 +266,7 @@ export default function App() {
   };
 
   const activeFilterBadgeCount =
+    (selectedDistrict !== 'all' ? 1 : 0) +
     (selectedCategory !== 'all' ? 1 : 0) +
     (selectedStatus !== 'all' ? 1 : 0) +
     (onlyStarred ? 1 : 0);
@@ -745,8 +776,15 @@ export default function App() {
         selectedRegion={selectedRegion}
         setSelectedRegion={(r) => {
           setSelectedRegion(r);
+          setSelectedDistrict('all');
           setTimeout(triggerFit, 40);
         }}
+        selectedDistrict={selectedDistrict}
+        setSelectedDistrict={(d) => {
+          setSelectedDistrict(d);
+          setTimeout(triggerFit, 40);
+        }}
+        availableDistricts={availableDistricts}
         selectedCategory={selectedCategory}
         setSelectedCategory={(c) => {
           setSelectedCategory(c);

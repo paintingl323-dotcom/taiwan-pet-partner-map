@@ -7,6 +7,9 @@ export default function FiltersModal({
   onClose,
   selectedRegion,
   setSelectedRegion,
+  selectedDistrict = 'all',
+  setSelectedDistrict = () => {},
+  availableDistricts = [],
   selectedCategory,
   setSelectedCategory,
   selectedStatus,
@@ -31,20 +34,49 @@ export default function FiltersModal({
         <div className="mt-modal-body">
           {/* Section 1: Region */}
           <div className="mt-filter-section">
-            <h4 className="mt-filter-heading">縣市區域（高屏優先部署＋全台示範點）</h4>
+            <h4 className="mt-filter-heading">縣市區域（高雄 83 家密集部署＋屏東＆全台示範點）</h4>
             <div className="mt-chip-cloud">
               {REGIONS.map((reg) => (
                 <button
                   key={reg.id}
                   type="button"
                   className={`mt-outline-chip ${selectedRegion === reg.id ? 'is-selected' : ''}`}
-                  onClick={() => setSelectedRegion(reg.id)}
+                  onClick={() => {
+                    setSelectedRegion(reg.id);
+                    setSelectedDistrict('all');
+                  }}
                 >
                   {reg.label}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Section 1.5: District Sub-Filter */}
+          {availableDistricts.length > 1 && (
+            <div className="mt-filter-section">
+              <h4 className="mt-filter-heading">行政區快篩</h4>
+              <div className="mt-chip-cloud">
+                <button
+                  type="button"
+                  className={`mt-outline-chip ${selectedDistrict === 'all' ? 'is-selected' : ''}`}
+                  onClick={() => setSelectedDistrict('all')}
+                >
+                  全部行政區
+                </button>
+                {availableDistricts.map((d) => (
+                  <button
+                    key={d.name}
+                    type="button"
+                    className={`mt-outline-chip ${selectedDistrict === d.name ? 'is-selected' : ''}`}
+                    onClick={() => setSelectedDistrict(d.name)}
+                  >
+                    {d.name} ({d.count})
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Section 2: Store Category */}
           <div className="mt-filter-section">

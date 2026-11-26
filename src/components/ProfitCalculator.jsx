@@ -190,7 +190,7 @@ export default function ProfitCalculator({ stores, onJumpToExplore }) {
                 type="range"
                 className="mt-range"
                 min={1}
-                max={80}
+                max={120}
                 step={1}
                 value={activeStores}
                 onChange={(e) => setActiveStores(Number(e.target.value))}
@@ -208,17 +208,19 @@ export default function ProfitCalculator({ stores, onJumpToExplore }) {
                   type="button"
                   className="mt-add-pill-btn"
                   style={{ height: 28, fontSize: 11.5, padding: '0 10px' }}
-                  onClick={() => setActiveStores(20)}
+                  onClick={() => setActiveStores(30)}
                 >
-                  高屏首波 20 家
+                  高屏首波 30 家
                 </button>
                 <button
                   type="button"
                   className="mt-add-pill-btn"
                   style={{ height: 28, fontSize: 11.5, padding: '0 10px' }}
-                  onClick={() => setActiveStores(50)}
+                  onClick={() =>
+                    setActiveStores(stores.filter((s) => s.region === '高雄').length)
+                  }
                 >
-                  全台 50 家滿編
+                  高雄全區（{stores.filter((s) => s.region === '高雄').length} 家）
                 </button>
               </div>
             </div>
